@@ -35,7 +35,7 @@ jobs:
         - "3.7"
         - "3.8"
       script:
-        - poetry run pytest --cov=connect_x --cov-report term-missing tests/
+        - poetry run pytest --cov=halite --cov-report term-missing tests/
         - poetry run codecov
     - stage: release
       before_script:
