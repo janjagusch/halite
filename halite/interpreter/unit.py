@@ -3,7 +3,6 @@ This module provides the two units in this game: Ships and shipyards.
 """
 
 from abc import ABC
-from itertools import count
 
 from halite.utils import RepresentationMixin, setup_logger
 from halite.interpreter.exceptions import (
@@ -15,14 +14,9 @@ from halite.interpreter.exceptions import (
 
 
 _LOGGER = setup_logger(__name__)
-_UID = count()
 
 
-def _create_uid(step):
-    return f"{step}-{next(_UID)}"
-
-
-class _Status:
+class Status:
 
     ACTIVE = "ACTIVE"
     DESTROYED = "DESTROYED"
@@ -50,7 +44,7 @@ class _Unit(RepresentationMixin, ABC):
         self._pos = pos
         self._player = player
         self._created_at = created_at
-        self._status = status or _Status.ACTIVE
+        self._status = status or Status.ACTIVE
         self._deleted_at = deleted_at
 
     @property
@@ -115,16 +109,16 @@ class _Unit(RepresentationMixin, ABC):
         The cell that is occupied by this unit.
 
         Returns:
-            halite.interpreter.board_map.BoardCell: The occupied cell.
+            halite.interpreter.board.BoardCell: The occupied cell.
         """
-        return self._game.board_map[self.pos]
+        return self._game.board[self.pos]
 
     @property
     def _step(self):
         return self._game.step
 
     def _assert_is_active(self):
-        if self.status != _Status.ACTIVE:
+        if self.status != Status.ACTIVE:
             raise InactiveUnitError(self.uid)
 
     @property
@@ -136,7 +130,7 @@ class _Unit(RepresentationMixin, ABC):
             "status": self.status,
             "player_index": self.player.index,
         }
-        if self.status != _Status.ACTIVE:
+        if self.status != Status.ACTIVE:
             repr_attrs = {
                 **repr_attrs,
                 "deleted_at": self.deleted_at,
@@ -178,7 +172,7 @@ class Shipyard(_Unit):
             pos=pos,
             player=player,
             created_at=created_at,
-            status=_Status.ACTIVE,
+            status=Status.ACTIVE,
             deleted_at=None,
         )
         self._converted_from = converted_from
@@ -228,7 +222,6 @@ class Shipyard(_Unit):
             ship (halite.interpreter.unit.Ship): The ship that wants to deposit halite.
         """
         self._assert_is_active()
-        self.player.halite += ship.halite
         self._deposit_log.append(
             {
                 "step": self._step,
@@ -242,7 +235,7 @@ class Shipyard(_Unit):
             f"from ship {ship.uid}."
         )
 
-    def spawn(self):
+    def spawn(self, uid):
         """
         Spawns a new ship.
 
@@ -257,26 +250,23 @@ class Shipyard(_Unit):
             raise CantSpawnError("Insufficient halite.")
 
         ship = Ship(
-            uid=_create_uid(self._step),
+            uid=uid,
             pos=self.pos,
             player=self.player,
             halite=0,
             created_at=self._step,
-            status=_Status.ACTIVE,
+            status=Status.ACTIVE,
             deleted_at=None,
             converted_to=None,
             spawned_from=self,
         )
-        self.player.ships[ship.uid] = ship
         self._spawned_ships[ship.uid] = ship
-
-        self.player.halite -= self._spawn_cost
 
         _LOGGER.info(
             f"{self._logging_prefix} spawned ship {ship.uid} at cell {self.pos}."
         )
 
-        return ship
+        return ship, self._spawn_cost
 
 
 class Ship(_Unit):
@@ -380,9 +370,8 @@ class Ship(_Unit):
         self._pos = None
         self._status = status
         self._deleted_at = self._step
-        del self.player.ships[self.uid]
 
-    def convert(self):
+    def convert(self, uid):
         """
         Converts the ship into a shipyard at the currently occupied cell.
 
@@ -395,28 +384,28 @@ class Ship(_Unit):
         self._assert_is_active()
         if self.player.halite < self._convert_cost - self.halite:
             raise CantConvertError("Insufficient halite.")
-        if any(self.pos == shipyard.pos for shipyard in self.player.shipyards.values()):
+        if any(self.pos == shipyard.pos for _, shipyard in self.player.shipyards):
             raise CantConvertError("Shipyard already present.")
 
         shipyard = Shipyard(
-            uid=_create_uid(self._step),
+            uid=uid,
             pos=self.pos,
             player=self.player,
             created_at=self._step,
             converted_from=self,
         )
-        self.player.shipyards[shipyard.uid] = shipyard
-        self.player.halite -= int(self._convert_cost - self.halite)
+
+        cost = int(self._convert_cost - self.halite)
 
         _LOGGER.info(
             f"{self._logging_prefix} was converted into " f"shipyard {shipyard.uid}."
         )
         self.occupies.convert()
 
-        self._delete(_Status.CONVERTED)
+        self._delete(Status.CONVERTED)
         self._converted_to = shipyard
 
-        return shipyard
+        return shipyard, cost
 
     def deposit(self):
         """
@@ -436,7 +425,10 @@ class Ship(_Unit):
             f"halite at shipyard {shipyard.uid}."
         )
         shipyard.deposit(self)
+
+        halite = self.halite
         self._halite = 0
+        return halite
 
     def destroy(self):
         """
@@ -444,7 +436,7 @@ class Ship(_Unit):
         """
         self._assert_is_active()
         _LOGGER.info(f"Oh no! {self._logging_prefix} was destroyed!")
-        self._delete(_Status.DESTROYED)
+        self._delete(Status.DESTROYED)
 
     def damage(self, amount):
         """
@@ -462,6 +454,6 @@ class Ship(_Unit):
     @property
     def _repr_attrs(self):
         repr_attrs = {**super()._repr_attrs, "halite": self.halite}
-        if self.status == _Status.CONVERTED:
+        if self.status == Status.CONVERTED:
             repr_attrs = {**repr_attrs, "converted_to": self.converted_to}
         return repr_attrs

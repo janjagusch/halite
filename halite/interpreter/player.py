@@ -2,6 +2,7 @@
 This module defines the player that plays the game.
 """
 
+from halite.interpreter.unit import Status
 from halite.utils import RepresentationMixin, merge_dicts, merge_lists
 
 
@@ -11,18 +12,11 @@ class Player(RepresentationMixin):
 
     Args:
         index (int): The index of the player.
-        halite (int): The amount of halite the player owns.
-        shipyards (dict[halite.interpreter.unit.Shipyard]): The dict of shipyards the
-            player ownsn.
-        ships (dict[halite.interpreter.unit.Ship]): The dict of ships the player owns.
         game (halite.interpreter.game.Game): The game the player plays.
     """
 
-    def __init__(self, *, index, halite, shipyards, ships, game):
+    def __init__(self, *, index, game):
         self._index = index
-        self.halite = halite
-        self.shipyards = shipyards
-        self.ships = ships
         self._game = game
 
     @property
@@ -40,11 +34,20 @@ class Player(RepresentationMixin):
         return self._game
 
     @property
+    def halite(self):
+        return self._game.halite_score[self.index]
+
+    @property
     def units(self):
-        """
-        All units (shipyards and ships) that the player owns.
-        """
-        return merge_dicts([self.shipyards, self.ships])
+        return self.game.units(player=self, status=Status.ACTIVE)
+
+    @property
+    def ships(self):
+        return self.game.ships(player=self, status=Status.ACTIVE)
+
+    @property
+    def shipyards(self):
+        return self.game.shipyards(player=self, status=Status.ACTIVE)
 
     @property
     def spawn_log(self):
@@ -61,3 +64,12 @@ class Player(RepresentationMixin):
         return merge_lists(
             [shipyard.deposit_log for shipyard in self.shipyards.values()]
         )
+
+    @property
+    def _repr_attrs(self):
+        return {
+            "index": self.index,
+            "halite": self.halite,
+            "ships": list(dict(self.ships).values()),
+            "shipyards": list(dict(self.shipyards).values()),
+        }

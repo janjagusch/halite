@@ -4,32 +4,28 @@ This module defines what to play the game on: The board and the board's cells.
 
 from kaggle_environments.envs.halite.halite import get_to_pos
 
+from halite.interpreter.exceptions import NoStateError
+from halite.interpreter.unit import Status
 from halite.utils import RepresentationMixin, setup_logger
 
 
 _LOGGER = setup_logger(__name__)
 
 
-class BoardMap(RepresentationMixin):
+class Board(RepresentationMixin):
     """
-    A board map that constitues of board cells.
+    A board that constitues of board cells.
 
     Args:
         board_cells (list): The list of board cells.
         game (halite.interpreter.game.Game): The game.
     """
 
-    def __init__(self, *, board_cells, game):
-        self._board_cells = board_cells
+    def __init__(self, *, game):
         self._game = game
-
-    def board_cells_from_halite(self, halite_map):
-        """
-        Constructs the board cells from a halite map and sets it as the attribute.
-        """
         self._board_cells = [
-            BoardCell(pos=pos, halite=halite, board_map=self)
-            for pos, halite in enumerate(halite_map)
+            BoardCell(pos=pos, board=self)
+            for pos in range(game.configuration.size ** 2)
         ]
 
     @property
@@ -81,15 +77,13 @@ class BoardCell(RepresentationMixin):
 
     Args:
         pos (int): The position.
-        halite (int): The amount of halite in the cell.
-        board_map (halite.interpreter.board_map.BoardMap): The board map this cell
+        board (halite.interpreter.board.BoardMap): The board to this cell
             belongs to.
     """
 
-    def __init__(self, pos, halite, board_map):
+    def __init__(self, pos, board):
         self._pos = pos
-        self._halite = halite
-        self._board_map = board_map
+        self._board = board
 
     @property
     def pos(self):
@@ -107,7 +101,15 @@ class BoardCell(RepresentationMixin):
 
     @property
     def _game(self):
-        return self._board_map.game
+        return self._board.game
+
+    @property
+    def _state(self):
+        return self._game.state
+
+    @property
+    def halite(self):
+        return self._game.state.halite_board[self.pos]
 
     @property
     def _configuration(self):
@@ -129,9 +131,9 @@ class BoardCell(RepresentationMixin):
             direction (str): The direction ("NORTH", "EAST", "SOUTH", "WEST").
 
         Returns:
-            halite.interpreter.board_map.BoardCell: The neighbouring cell.
+            halite.interpreter.board.BoardCell: The neighbouring cell.
         """
-        return self._board_map[get_to_pos(self._board_map.size, self.pos, direction)]
+        return self._board[get_to_pos(self._board.size, self.pos, direction)]
 
     def __lt__(self, other):
         return self.halite < other.halite
@@ -156,10 +158,10 @@ class BoardCell(RepresentationMixin):
         """
         Regenerates the cell's halite if it is not occupied.
         """
-        if not self.occupied_by:
-            new_halite = self._halite * self._regen_rate
+        if not any(self.occupied_by):
+            new_halite = self.halite * self._regen_rate
             _LOGGER.debug(f"Cell {self.pos} regenerated {new_halite} halite.")
-            self._halite += new_halite
+            self._state.halite_board[self.pos] += new_halite
 
     def destroy(self):
         """
@@ -168,22 +170,22 @@ class BoardCell(RepresentationMixin):
         _LOGGER.info(
             f"Oh no! Cell {self.pos} lost {self.halite} halite in the explosion!"
         )
-        self._halite = 0
+        self._state.halite_board[self.pos] = 0
 
     def convert(self):
         """
         Depletes the cell's halite because a shipyard was built on top of it.
         """
         _LOGGER.info(f"Cell {self.pos} lost {self.halite} halite in the construction.")
-        self._halite = 0
+        self._state.halite_board[self.pos] = 0
 
     def mine(self):
         """
         Depletes a cell's halite because a ship was mining on top of it.
         """
-        mined_halite = self._halite * self._collect_rate
+        mined_halite = self.halite * self._collect_rate
         _LOGGER.debug(f"Cell {self.pos} lost {mined_halite} halite to mining.")
-        self._halite -= mined_halite
+        self._state.halite_board[self.pos] -= mined_halite
         return mined_halite
 
     @property
@@ -199,6 +201,8 @@ class BoardCell(RepresentationMixin):
         Tells you the units that are currently occupying this cell.
 
         Returns:
-            list: A list of units occupying this cell.
+            list: A list of active units occupying this cell.
         """
-        return [unit for unit in self._game.units.values() if unit.pos == self.pos]
+        for uid, unit in self._game.units(status=Status.ACTIVE):
+            if unit.pos is self.pos:
+                yield unit
