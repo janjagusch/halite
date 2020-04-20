@@ -2,7 +2,7 @@
 This module defines the player that plays the game.
 """
 
-from halite.interpreter.unit import Status
+from halite.interpreter.constants import UnitStatus
 from halite.utils import RepresentationMixin, merge_dicts, merge_lists
 
 
@@ -39,15 +39,15 @@ class Player(RepresentationMixin):
 
     @property
     def units(self):
-        return self.game.units(player=self, status=Status.ACTIVE)
+        return self.game.units(player=self, status=UnitStatus.ACTIVE)
 
     @property
     def ships(self):
-        return self.game.ships(player=self, status=Status.ACTIVE)
+        return self.game.ships(player=self, status=UnitStatus.ACTIVE)
 
     @property
     def shipyards(self):
-        return self.game.shipyards(player=self, status=Status.ACTIVE)
+        return self.game.shipyards(player=self, status=UnitStatus.ACTIVE)
 
     @property
     def spawn_log(self):

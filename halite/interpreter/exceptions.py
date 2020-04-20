@@ -63,3 +63,8 @@ class NoStateError(HaliteInterpreterException):
     """
     Exception that is thrown when trying to access a game state but it is not there.
     """
+
+class InvalidUnitTypeError(HaliteInterpreterException):
+    """
+    Exception that is thrown when trying to create a unit type that does not exist.
+    """

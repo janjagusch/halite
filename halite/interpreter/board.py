@@ -5,7 +5,7 @@ This module defines what to play the game on: The board and the board's cells.
 from kaggle_environments.envs.halite.halite import get_to_pos
 
 from halite.interpreter.exceptions import NoStateError
-from halite.interpreter.unit import Status
+from halite.interpreter.constants import UnitStatus
 from halite.utils import RepresentationMixin, setup_logger
 
 
@@ -93,13 +93,6 @@ class BoardCell(RepresentationMixin):
         return self._pos
 
     @property
-    def halite(self):
-        """
-        The amount of halite in the cell.
-        """
-        return self._halite
-
-    @property
     def _game(self):
         return self._board.game
 
@@ -183,6 +176,7 @@ class BoardCell(RepresentationMixin):
         """
         Depletes a cell's halite because a ship was mining on top of it.
         """
+        # TODO: Check if occupied by ship.
         mined_halite = self.halite * self._collect_rate
         _LOGGER.debug(f"Cell {self.pos} lost {mined_halite} halite to mining.")
         self._state.halite_board[self.pos] -= mined_halite
@@ -203,6 +197,6 @@ class BoardCell(RepresentationMixin):
         Returns:
             list: A list of active units occupying this cell.
         """
-        for uid, unit in self._game.units(status=Status.ACTIVE):
+        for uid, unit in self._game.units(status=UnitStatus.ACTIVE):
             if unit.pos is self.pos:
                 yield unit

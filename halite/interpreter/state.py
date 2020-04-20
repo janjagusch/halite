@@ -2,77 +2,82 @@
 This module defines the game.
 """
 
+from dataclasses import dataclass, field
 from itertools import count
+from typing import List, Optional, Union, Dict
 
-from halite.utils import RepresentationMixin, setup_logger
-from halite.interpreter.player import Player
-from halite.interpreter.unit import Ship, Shipyard
+from halite.interpreter.constants import UnitStatus, UnitType
+from halite.utils.representation_mixin import DataClassYamlMixin
 
 
 _UID = count()
-_LOGGER = setup_logger(__name__)
 
 
-class State(RepresentationMixin):
-    """
-    A game state that keeps track of the board map, the steps, the units and the halite.
+@dataclass(order=True, unsafe_hash=True)
+class UnitState(DataClassYamlMixin):
+    # Basic unit attributes.
+    uid: str = field()
+    unit_type: str = field(compare=False, hash=False)
+    pos: Union[int, None] = field(compare=False, hash=False)
+    player_index: int = field(compare=False, hash=False)
+    created_at: int = field(hash=False, compare=False)
+    deleted_at: Union[int, None] = field(
+        hash=False, compare=False, init=False, default=None
+    )
+    unit_status: str = field(default=UnitStatus.ACTIVE, compare=False)
+    # Ship attributes.
+    converted_to_uid: Union[str, None] = field(
+        compare=False, hash=False, init=False, default=None
+    )
+    spawned_from_uid: Union[str, None] = field(compare=False, hash=False, default=None)
+    halite: Union[int, None] = field(compare=False, hash=False, default=None)
+    # Shipyard attributes.
+    spawned_ship_uids: Union[List[str], None] = field(
+        default=None, compare=False, hash=False
+    )
+    deposit_log: Union[List[dict], None] = field(
+        default=None, compare=False, hash=False
+    )
+    converted_from_uid: Union[str, None] = field(
+        compare=False, hash=False, default=None
+    )
 
-    Args:
-        board_cells (halite.interpreter.board.BoardCell): The board cells.
-        step (int): The current game round.
-        units (dict[halite.interpreter.unit._Unit]): The units.
-        halite_score (list[float]): The halite per player.
-        halite_board (list[float]): The halite per cell on the board.
-    """
+    @classmethod
+    def create_ship(
+        cls, *, uid, pos, player_index, created_at, spawned_from_uid, halite=0
+    ):
+        return cls(
+            uid=uid,
+            unit_type=UnitType.SHIP,
+            pos=pos,
+            player_index=player_index,
+            created_at=created_at,
+            spawned_from_uid=spawned_from_uid,
+            halite=halite,
+        )
 
-    def __init__(self, *, step, units, halite_score, halite_board):
-        self._step = step
-        self._units = units
-        self._halite_score = halite_score
-        self._halite_board = halite_board
+    @classmethod
+    def create_shipyard(cls, *, uid, pos, player_index, created_at, converted_from_uid):
+        return cls(
+            uid=uid,
+            unit_type=UnitType.SHIPYARD,
+            pos=pos,
+            player_index=player_index,
+            created_at=created_at,
+            converted_from_uid=converted_from_uid,
+            spawned_ship_uids=[],
+            deposit_log=[],
+        )
+
+
+@dataclass(order=True, unsafe_hash=True)
+class State(DataClassYamlMixin):
+    step: int = field()
+    unit_states: Dict[str, UnitState] = field(
+        compare=False, hash=False, default_factory=list
+    )
+    halite_score: List[int] = field(compare=False, hash=False, default_factory=list)
+    halite_board: List[int] = field(compare=False, hash=False, default_factory=list)
 
     def create_uid(self):
         return f"{self.step}-{next(_UID)}"
-
-    @property
-    def step(self):
-        return self._step
-
-    @property
-    def halite_score(self):
-        return self._halite_score
-
-    @property
-    def halite_board(self):
-        return self._halite_board
-
-    @property
-    def units(self):
-        return self._units
-
-    def filter_units(self, player=None, class_=None, status=None):
-        def filter_(unit):
-            if player is not None and unit[1].player != player:
-                return False
-            if class_ is not None and not isinstance(unit[1], class_):
-                return False
-            if status is not None and unit[1].status != status:
-                return False
-            return True
-
-        return filter(filter_, self._units.items())
-
-    def ships(self, player=None, status=None):
-        return self.units(class_=Ship, player=player, status=status)
-
-    def shipyards(self, player=None, status=None):
-        return self.units(class_=Shipyard, player=player, status=status)
-
-    @property
-    def _repr_attrs(self):
-        return {
-            "step": self.step,
-            "units": self.units,
-            "halite_score": self.halite_score,
-            "halite_board_sum": sum(self.halite_board),
-        }

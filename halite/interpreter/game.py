@@ -2,6 +2,7 @@
 This module defines the game.
 """
 
+from contextlib import contextmanager
 from random import randint
 import copy
 import operator
@@ -12,11 +13,13 @@ from halite.interpreter.exceptions import (
     InvalidActionError,
     InvalidUnitError,
     NoStateError,
+    InvalidUnitTypeError,
 )
 from halite.interpreter.board import Board
 from halite.interpreter.player import Player
-from halite.interpreter.unit import Ship, Shipyard, Status
-from halite.interpreter.state import State
+from halite.interpreter.unit import Ship, Shipyard
+from halite.interpreter.constants import UnitStatus
+from halite.interpreter.state import State, UnitState, UnitType
 
 
 _LOGGER = setup_logger(__name__)
@@ -40,6 +43,28 @@ class Game(RepresentationMixin):
         self._board = Board(game=self)
         self._starting_halite = starting_halite
         self._state = None
+        self._units = None
+
+    @contextmanager
+    def _load_state(self, state):
+
+        def _load_unit(self, state):
+            if state.unit_type == UnitType.SHIP:
+                return Ship(game=self, state=state)
+            elif state.unit_type == UnitType.SHIPYARD:
+                return Shipyard(game=self, state=state)
+            raise InvalidUnitTypeError(state.type)
+
+        state = copy.deepcopy(state)
+        try:
+            self._state = state
+            self._units = {
+                uid: _load_unit(self, unit_state) for uid, unit_state in state.unit_states.items()
+            }
+            yield self
+        finally:
+            self._state = None
+            self._units = None
 
     @property
     def n_players(self):
@@ -53,7 +78,7 @@ class Game(RepresentationMixin):
     def initial(self):
         state = State(
             step=0,
-            units={},
+            units=[],
             halite_score=[self._starting_halite for _ in range(self.n_players)],
             halite_board=self._initialize_halite_board(),
         )
@@ -95,12 +120,20 @@ class Game(RepresentationMixin):
     def step(self):
         return self.state.step
 
-    @property
-    def _units(self):
-        return self.state.units
+    def _filter_units(self, player=None, class_=None, status=None):
+        def _filter(unit):
+            if player is not None and unit.player != player:
+                return False
+            if class_ is not None and not isinstance(unit, class_):
+                return False
+            if status is not None and unit.status != status:
+                return False
+            return True
+
+        return filter(lambda item: _filter(item[1]), self._units.items())
 
     def units(self, player=None, class_=None, status=None):
-        return self.state.filter_units(player=player, class_=class_, status=status)
+        return self._filter_units(player=player, class_=class_, status=status)
 
     def ships(self, player=None, status=None):
         return self.units(class_=Ship, player=player, status=status)
@@ -116,7 +149,7 @@ class Game(RepresentationMixin):
         """
 
         def detect_collision_with_shipyards(self):
-            for _, ship in self.ships(status=Status.ACTIVE):
+            for _, ship in self.ships(status=UnitStatus.ACTIVE):
                 enemy_shipyard = None
                 for unit in ship.occupies.occupied_by:
                     if isinstance(unit, Shipyard) and unit.player != ship.player:
@@ -182,13 +215,18 @@ class Game(RepresentationMixin):
         return player
 
     def _create_unit(self, class_, pos, player, created_at=None, **kwargs):
-        unit = class_(
-            uid=self._create_uid(),
+        create_state_func = UnitState.create_ship if class_ == Ship else UnitState.create_shipyard
+
+        state = create_state_func(
+            uid=create_uid(),
             pos=pos,
-            player=player,
+            player_index=player.index,
             created_at=created_at or self.step,
             **kwargs,
         )
+
+        unit = class_(self, state=state)
+
         self._units[unit.uid] = unit
         return unit
 
@@ -208,7 +246,7 @@ class Game(RepresentationMixin):
             pos=pos,
             player=player,
             created_at=created_at,
-            status=status or Status.ACTIVE,
+            status=status or UnitStatus.ACTIVE,
             halite=halite,
             deleted_at=deleted_at,
             converted_to=converted_to,
@@ -268,12 +306,10 @@ class Game(RepresentationMixin):
         }
 
     def interpret(self, state, actions):
-        self._state = copy.deepcopy(state) # this doesnt work because of player references.
-        self._interpret_actions(actions)
-        self._detect_collision()
-        state = self.state
-        self._state = None
-        return state
+        with self._load_state(state):
+            self._interpret_actions(actions)
+            self._detect_collision()
+            return self.state
 
     def _initialize_halite_board(self):
         def _distribute_halite():
