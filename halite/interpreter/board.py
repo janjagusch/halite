@@ -6,10 +6,7 @@ from kaggle_environments.envs.halite.halite import get_to_pos
 
 from halite.interpreter.exceptions import NoStateError
 from halite.interpreter.constants import UnitStatus
-from halite.utils import RepresentationMixin, setup_logger
-
-
-_LOGGER = setup_logger(__name__)
+from halite.utils import RepresentationMixin
 
 
 class Board(RepresentationMixin):
@@ -54,13 +51,6 @@ class Board(RepresentationMixin):
 
     def __iter__(self):
         return iter(self.board_cells)
-
-    def regenerate(self):
-        """
-        Regenerates the halite in all cells on the board (that are not occupied).
-        """
-        for board_cell in self:
-            board_cell.regenerate()
 
     @property
     def _repr_attrs(self):
@@ -129,13 +119,19 @@ class BoardCell(RepresentationMixin):
         return self._board[get_to_pos(self._board.size, self.pos, direction)]
 
     def __lt__(self, other):
-        return self.halite < other.halite
+        if self.__class__ is other.__class__:
+            return self.halite < other.halite
+        NotImplemented
 
     def __eq__(self, other):
-        return self.halite == other.halite
+        if self.__class__ is other.__class__:
+            return self.halite == other.halite
+        NotImplemented
 
     def __gt__(self, other):
-        return self.halite > other.halite
+        if self.__class__ is other.__class__:
+            return self.halite > other.halite
+        NotImplemented
 
     def __add__(self, other):
         if isinstance(other, self.__class__):
@@ -146,41 +142,6 @@ class BoardCell(RepresentationMixin):
         if isinstance(other, self.__class__):
             return self.halite + other.halite
         return self.halite + other
-
-    def regenerate(self):
-        """
-        Regenerates the cell's halite if it is not occupied.
-        """
-        if not any(self.occupied_by):
-            new_halite = self.halite * self._regen_rate
-            _LOGGER.debug(f"Cell {self.pos} regenerated {new_halite} halite.")
-            self._state.halite_board[self.pos] += new_halite
-
-    def destroy(self):
-        """
-        Depletes the cell's halite because two ships collided on top of it.
-        """
-        _LOGGER.info(
-            f"Oh no! Cell {self.pos} lost {self.halite} halite in the explosion!"
-        )
-        self._state.halite_board[self.pos] = 0
-
-    def convert(self):
-        """
-        Depletes the cell's halite because a shipyard was built on top of it.
-        """
-        _LOGGER.info(f"Cell {self.pos} lost {self.halite} halite in the construction.")
-        self._state.halite_board[self.pos] = 0
-
-    def mine(self):
-        """
-        Depletes a cell's halite because a ship was mining on top of it.
-        """
-        # TODO: Check if occupied by ship.
-        mined_halite = self.halite * self._collect_rate
-        _LOGGER.debug(f"Cell {self.pos} lost {mined_halite} halite to mining.")
-        self._state.halite_board[self.pos] -= mined_halite
-        return mined_halite
 
     @property
     def _repr_attrs(self):

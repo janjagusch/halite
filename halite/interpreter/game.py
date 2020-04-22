@@ -4,25 +4,32 @@ This module defines the game.
 
 from contextlib import contextmanager
 from random import randint
+from uuid import uuid4
 import copy
 import operator
 import math
 
-from halite.utils import RepresentationMixin, merge_dicts, setup_logger
+import structlog
+from structlog.contextvars import bind_contextvars, clear_contextvars
+
+from halite.utils import RepresentationMixin, merge_dicts
 from halite.interpreter.exceptions import (
-    InvalidActionError,
+    CantSpawn,
+    CantConvert,
+    CantDeposit,
+    ImpossibleAction,
+    IllegalAction,
     InvalidUnitError,
     NoStateError,
-    InvalidUnitTypeError,
 )
 from halite.interpreter.board import Board
 from halite.interpreter.player import Player
 from halite.interpreter.unit import Ship, Shipyard
-from halite.interpreter.constants import UnitStatus
+from halite.interpreter.constants import UnitStatus, Actions, Events
 from halite.interpreter.state import State, UnitState, UnitType
 
 
-_LOGGER = setup_logger(__name__)
+_LOGGER = structlog.get_logger(__name__)
 
 
 class Game(RepresentationMixin):
@@ -37,29 +44,30 @@ class Game(RepresentationMixin):
         step (int): The current game round.
     """
 
-    def __init__(self, *, configuration, n_players=4, starting_halite=5000):
+    def __init__(self, *, configuration, n_players=4, starting_halite=5000, uuid=None):
         self._configuration = configuration
         self._players = [self._create_player(index) for index in range(n_players)]
         self._board = Board(game=self)
         self._starting_halite = starting_halite
         self._state = None
         self._units = None
+        self._uuid = uuid or uuid4().hex
 
     @contextmanager
-    def _load_state(self, state):
-
+    def load_state(self, state):
         def _load_unit(self, state):
+            UnitType.assert_valid(state.unit_type)
             if state.unit_type == UnitType.SHIP:
-                return Ship(game=self, state=state)
+                return Ship(uid=state.uid, game=self)
             elif state.unit_type == UnitType.SHIPYARD:
-                return Shipyard(game=self, state=state)
-            raise InvalidUnitTypeError(state.type)
+                return Shipyard(uid=state.uid, game=self)
 
         state = copy.deepcopy(state)
         try:
             self._state = state
             self._units = {
-                uid: _load_unit(self, unit_state) for uid, unit_state in state.unit_states.items()
+                uid: _load_unit(self, unit_state)
+                for uid, unit_state in state.unit_states.items()
             }
             yield self
         finally:
@@ -73,19 +81,6 @@ class Game(RepresentationMixin):
     @property
     def starting_halite(self):
         return self._starting_halite
-
-    @property
-    def initial(self):
-        state = State(
-            step=0,
-            units=[],
-            halite_score=[self._starting_halite for _ in range(self.n_players)],
-            halite_board=self._initialize_halite_board(),
-        )
-        self._state = state
-        self._initialize_ships()
-        self._state = None
-        return state
 
     def _create_uid(self):
         return self.state.create_uid()
@@ -116,10 +111,6 @@ class Game(RepresentationMixin):
     def board(self):
         return self._board
 
-    @property
-    def step(self):
-        return self.state.step
-
     def _filter_units(self, player=None, class_=None, status=None):
         def _filter(unit):
             if player is not None and unit.player != player:
@@ -148,6 +139,32 @@ class Game(RepresentationMixin):
         Then detects collision between multiple ships.
         """
 
+        def destroy_ship(self, ship):
+            _LOGGER.info(
+                "",
+                event_type=Events.DESTROYED,
+                ship_uid=ship.uid,
+                halite=-ship.halite,
+                pos=ship.pos,
+                player_index=ship.player.index,
+            )
+            self._delete_ship(ship, UnitStatus.DESTROYED)
+
+        def damage_ship(self, ship, damage):
+            _LOGGER.info(
+                "",
+                event_type=Events.DAMAGED,
+                ship_uid=ship.uid,
+                halite=-damage,
+                pos=ship.pos,
+                player_index=ship.player.index,
+            )
+            self._state.unit_states[ship.uid].halite -= damage
+
+        def destroy_board_cell(self, board_cell):
+            # TODO: Add logging.
+            self._deplete_board_cell(board_cell)
+
         def detect_collision_with_shipyards(self):
             for _, ship in self.ships(status=UnitStatus.ACTIVE):
                 enemy_shipyard = None
@@ -159,7 +176,7 @@ class Game(RepresentationMixin):
                     _LOGGER.info(
                         f"Collision detected between {ship} and {enemy_shipyard}."
                     )
-                    ship.destroy()
+                    destroy_ship(self, ship)
 
         def detect_collision_between_ships(self):
             for board_cell in self.board:
@@ -173,61 +190,153 @@ class Game(RepresentationMixin):
                 _LOGGER.info(f"Collision detected between {collision_str}.")
                 second_largest_halite = ships[1].halite
                 for ship in ships[1:]:
-                    ship.destroy()
+                    destroy_ship(self, ship)
                 if ships[0].halite == second_largest_halite:
-                    ships[0].destroy()
+                    destroy_ship(self, ships[0])
                 else:
-                    ships[0].damage(second_largest_halite)
-                board_cell.destroy()
+                    damage_ship(self, ships[0], second_largest_halite)
+                destroy_board_cell(self, board_cell)
 
         detect_collision_with_shipyards(self)
         detect_collision_between_ships(self)
 
-    def spawn(self, player, shipyard):
-        assert player == shipyard.player
-        ship, cost = shipyard.spawn(self._create_uid())
-        self._units[ship.uid] = ship
-        self.halite_score[player.index] -= cost
-        return ship
+    def _delete_ship(self, ship, status):
+        state = self._state.unit_states[ship.uid]
+        state.halite = None
+        state.pos = None
+        state.unit_status = status
+        state.deleted_at = self._state.step
 
-    def convert(self, player, ship):
-        assert player == ship.player
-        shipyard, cost = ship.convert(self._create_uid())
-        self._units[shipyard.uid] = shipyard
-        self.halite_score[player.index] -= cost
-        return shipyard
+    def _deplete_board_cell(self, board_cell):
+        self._state.halite_board[board_cell.pos] = 0
 
-    def move(self, player, ship, direction):
-        assert player == ship.player
-        ship.move(direction)
+    @staticmethod
+    def _assert_valid_action(player, unit, required_unit_class):
+        assert player == unit.player
+        assert isinstance(unit, required_unit_class)
+        if unit.status != UnitStatus.ACTIVE:
+            raise InactiveUnitError(unit.uid)
 
-    def mine(self, player, ship):
-        assert player == ship.player
-        ship.mine()
+    def _spawn(self, player, shipyard):
+        self._assert_valid_action(player, shipyard, Shipyard)
 
-    def deposit(self, player, ship):
-        assert player == ship.player
-        halite = ship.deposit()
-        self.halite_score[player.index] += halite
+        cost = self.configuration.spawn_cost
+
+        if player.halite < cost:
+            raise CantSpawn("Insufficient halite.")
+
+        self._state.halite_score[shipyard.player.index] -= cost
+        ship = self._create_ship(
+            pos=shipyard.pos, player=shipyard.player, spawned_from=shipyard
+        )
+
+        _LOGGER.info(
+            "", event_type=Events.SPAWNED, ship_uid=ship.uid, shipyard_uid=shipyard.uid
+        )
+
+    def _convert(self, player, ship):
+        def convert_ship(self, ship, shipyard):
+            # TODO: Add logging
+            state = self._state.unit_states[ship.uid]
+            state.converted_to_uid = shipyard.uid
+            self._delete_ship(ship, UnitStatus.CONVERTED)
+
+        def convert_board_cell(self, board_cell):
+            # TODO: Add logging.
+            self._deplete_board_cell(board_cell)
+
+        self._assert_valid_action(player, ship, Ship)
+
+        cost = self.configuration.convert_cost - ship.halite
+
+        if ship.player.halite < cost:
+            raise CantConvert("Insufficient halite.")
+        if any(ship.pos == shipyard.pos for _, shipyard in player.shipyards):
+            raise CantConvert("Shipyard already present.")
+
+        self._state.halite_score[ship.player.index] -= cost
+        shipyard = self._create_shipyard(
+            pos=ship.pos, player=ship.player, converted_from=ship
+        )
+
+        convert_board_cell(self, ship.occupies)
+        convert_ship(self, ship, shipyard)
+
+        _LOGGER.info(
+            "",
+            event_type=Events.CONVERTED,
+            ship_uid=ship.uid,
+            shipyard_uid=shipyard.uid,
+        )
+
+    def _move(self, player, ship, direction):
+
+        self._assert_valid_action(player, ship, Ship)
+
+        state = self._state.unit_states[ship.uid]
+
+        state.halite *= 1 - self._configuration.move_cost
+        state.pos = ship.occupies.neighbour(direction).pos
+
+        _LOGGER.info(
+            "", event_type=Events.MOVED, ship_uid=ship.uid, direction=direction
+        )
+
+        # TODO: Add logging.
+
+    def _mine(self, player, ship):
+
+        self._assert_valid_action(player, ship, Ship)
+
+        state = self._state.unit_states[ship.uid]
+
+        mined_halite = max(ship.occupies.halite * self._configuration.collect_rate, 1)
+
+        state.halite += mined_halite
+        self._state.halite_board[ship.pos] -= mined_halite
+
+        _LOGGER.info(
+            "", event_type=Events.MINED, ship_uid=ship.uid, halite=mined_halite
+        )
+
+    def _deposit(self, player, ship):
+
+        self._assert_valid_action(player, ship, Ship)
+        shipyard = ship.occupied_friendly_shipyard
+        if shipyard is None:
+            raise CantDeposit("Not over a friendly shipyard.")
+
+        deposited_halite = ship.halite
+
+        self._state.halite_score[player.index] += deposited_halite
+        self._state.unit_states[ship.uid].halite = 0
+
+        _LOGGER.info(
+            "", event_type=Events.DEPOSITED, ship_uid=ship.uid, halite=deposited_halite,
+            shipyard_uid=shipyard.uid
+        )
 
     def _create_player(self, index):
         player = Player(index=index, game=self)
         return player
 
     def _create_unit(self, class_, pos, player, created_at=None, **kwargs):
-        create_state_func = UnitState.create_ship if class_ == Ship else UnitState.create_shipyard
+        create_state_func = (
+            UnitState.create_ship if class_ == Ship else UnitState.create_shipyard
+        )
 
         state = create_state_func(
-            uid=create_uid(),
+            uid=self._create_uid(),
             pos=pos,
             player_index=player.index,
-            created_at=created_at or self.step,
+            created_at=created_at or self._state.step,
             **kwargs,
         )
 
-        unit = class_(self, state=state)
+        unit = class_(game=self, uid=state.uid)
 
         self._units[unit.uid] = unit
+        self._state.unit_states[state.uid] = state
         return unit
 
     def _create_ship(
@@ -241,35 +350,24 @@ class Game(RepresentationMixin):
         converted_to=None,
         spawned_from=None,
     ):
-        ship = self._create_unit(
+        return self._create_unit(
             class_=Ship,
             pos=pos,
             player=player,
             created_at=created_at,
-            status=status or UnitStatus.ACTIVE,
             halite=halite,
-            deleted_at=deleted_at,
-            converted_to=converted_to,
-            spawned_from=spawned_from,
+            spawned_from_uid=None if spawned_from is None else spawned_from.uid,
         )
 
     def _create_shipyard(
-        self,
-        pos,
-        player,
-        created_at=None,
-        converted_from=None,
-        spawned_ships=None,
-        deposit_log=None,
+        self, pos, player, created_at=None, converted_from=None,
     ):
         return self._create_unit(
             class_=Shipyard,
             pos=pos,
             player=player,
             created_at=created_at,
-            converted_from=converted_from,
-            spawned_ships=spawned_ships,
-            deposit_log=deposit_log,
+            converted_from_uid=None if converted_from is None else converted_from.uid,
         )
 
     def _interpret_actions(self, actions_list):
@@ -281,21 +379,26 @@ class Game(RepresentationMixin):
         """
 
         def interpret_action(self, player, unit, action):
+            Actions.assert_valid(action)
             if action == "SPAWN":
-                self.spawn(player, unit)
+                self._spawn(player, unit)
             elif action == "CONVERT":
-                self.convert(player, unit)
+                self._convert(player, unit)
             elif action in ("NORTH", "SOUTH", "EAST", "WEST"):
-                self.move(player, unit, direction=action)
-            else:
-                raise InvalidActionError(action)
+                self._move(player, unit, direction=action)
 
         for player, actions in zip(self.players, actions_list):
             for uid, action in actions.items():
                 units = dict(player.units)
                 if uid not in units:
                     raise InvalidUnitError(uid)
-                interpret_action(self, player, units[uid], action)
+                try:
+                    interpret_action(self, player, units[uid], action)
+                except ImpossibleAction as error:
+                    _LOGGER.error(error)
+                except IllegalAction:
+                    # TODO: Supposed to make that agent loose.
+                    pass
 
     @property
     def _repr_attrs(self):
@@ -305,10 +408,39 @@ class Game(RepresentationMixin):
             "board": self.board,
         }
 
+    def _collect_halite(self, actions_list):
+        for player, actions in zip(self.players, actions_list):
+            for uid, ship in player.ships:
+                if uid not in actions:
+                    if ship.occupied_friendly_shipyard:
+                        self._deposit(player, ship)
+                    else:
+                        self._mine(player, ship)
+
+    def _regenerate_halite(self):
+        def regenerate_board_cell(self, board_cell):
+            if not any(board_cell.occupied_by) and board_cell.halite:
+                new_halite = board_cell.halite * self._configuration.regen_rate
+                self._state.halite_board[board_cell.pos] += new_halite
+                _LOGGER.debug(
+                    "",
+                    event_type=Events.REGENERATED,
+                    pos=board_cell.pos,
+                    halite=new_halite,
+                )
+
+        for board_cell in self.board.board_cells:
+            regenerate_board_cell(self, board_cell)
+
     def interpret(self, state, actions):
-        with self._load_state(state):
+        with self.load_state(state):
+            self.state.step += 1
+            clear_contextvars()
+            bind_contextvars(step=self.state.step)
             self._interpret_actions(actions)
             self._detect_collision()
+            self._collect_halite(actions)
+            self._regenerate_halite()
             return self.state
 
     def _initialize_halite_board(self):
@@ -391,3 +523,15 @@ class Game(RepresentationMixin):
         players = self.players
 
         return _create_starting_ships(self, _distribute_starting_ships())
+
+    @property
+    def initial(self):
+        state = State(
+            step=0,
+            unit_states={},
+            halite_score=[self._starting_halite for _ in range(self.n_players)],
+            halite_board=self._initialize_halite_board(),
+        )
+        with self.load_state(state):
+            self._initialize_ships()
+            return self.state

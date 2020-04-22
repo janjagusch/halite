@@ -2,7 +2,7 @@
 This module defines the player that plays the game.
 """
 
-from halite.interpreter.constants import UnitStatus
+from halite.interpreter.constants import UnitStatus, PlayerStatus
 from halite.utils import RepresentationMixin, merge_dicts, merge_lists
 
 
@@ -50,20 +50,10 @@ class Player(RepresentationMixin):
         return self.game.shipyards(player=self, status=UnitStatus.ACTIVE)
 
     @property
-    def spawn_log(self):
-        """
-        A log of all ships that the player spawned.
-        """
-        return merge_lists([shipyard.spawn_log for shipyard in self.shipyards.values()])
-
-    @property
-    def deposit_log(self):
-        """
-        A log of all halite that the player deposited.
-        """
-        return merge_lists(
-            [shipyard.deposit_log for shipyard in self.shipyards.values()]
-        )
+    def status(self):
+        if not self.units and self.halite < self.game.configuration.spawn_cost:
+            return PlayerStatus.LOST
+        return PlayerStatus.ACTIVE
 
     @property
     def _repr_attrs(self):
@@ -73,3 +63,8 @@ class Player(RepresentationMixin):
             "ships": list(dict(self.ships).values()),
             "shipyards": list(dict(self.shipyards).values()),
         }
+
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self.index == other.index
+        raise NotImplemented
