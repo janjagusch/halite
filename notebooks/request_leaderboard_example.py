@@ -35,7 +35,7 @@ TOP = 100
 
 with TemporaryDirectory() as tmp_dir:
     api.competition_leaderboard_download(COMPETITION, tmp_dir)
-    leaderboard = pd.read_csv(f"{tmp_dir}/{COMPETITION}.zip").head(100)
+    leaderboard = pd.read_csv(f"{tmp_dir}/{COMPETITION}.zip").sort_values("Score", ascending=False).head(TOP).reset_index(drop=True)
     leaderboard.columns = ["team_id", "team_name", "submitted_at", "score"]
     leaderboard["placement"] = leaderboard.index + 1
     leaderboard["requested_at"] = datetime.now()
