@@ -1,0 +1,67 @@
+[
+  {
+    "name": "game_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "player_id",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "step",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "ships",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "shipyards",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "spawns",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "cargo",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "mined",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "burned",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "dropped",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "deposited",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "spent",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "stored",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  }
+]
