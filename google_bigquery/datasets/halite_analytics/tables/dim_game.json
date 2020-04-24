@@ -75,5 +75,10 @@
         "mode": "REQUIRED"
       }
     ]
+  },
+  {
+    "name": "tags",
+    "type": "STRING",
+    "mode": "REPEATED"
   }
 ]
