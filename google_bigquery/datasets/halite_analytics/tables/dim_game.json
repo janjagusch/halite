@@ -78,7 +78,19 @@
   },
   {
     "name": "tags",
-    "type": "STRING",
-    "mode": "REPEATED"
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "key",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "value",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      }
+    ]
   }
 ]

@@ -41,3 +41,9 @@ resource "google_bigquery_table" "fact" {
   table_id   = "fact"
   schema     = file("../datasets/halite_analytics/tables/fact.json")
 }
+
+resource "google_bigquery_table" "leaderboard" {
+  dataset_id = "halite_analytics"
+  table_id   = "leaderboard"
+  schema     = file("../datasets/halite_analytics/tables/leaderboard.json")
+}
