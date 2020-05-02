@@ -23,7 +23,7 @@ format: format_black clean
 
 lint_black: test_missing_init
 	@echo "Black linting ..."
-	@poetry run black --check .
+	@poetry run black --check halite/
 
 lint_pylint: test_missing_init
 	@echo "Pylint linting ..."
