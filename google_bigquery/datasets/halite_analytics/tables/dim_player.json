@@ -1,0 +1,22 @@
+[
+  {
+    "name": "game_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "player_id",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "agent_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "placement",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  }
+]

@@ -1,0 +1,96 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "players",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "configuration",
+    "type": "RECORD",
+    "mode": "REQUIRED",
+    "fields": [
+      {
+        "name": "episode_steps",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "agent_exec",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "agent_timeout",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "act_timeout",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "run_timeout",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "halite",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "size",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "spawn_cost",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "convert_cost",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "move_cost",
+        "type": "FLOAT",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "collect_rate",
+        "type": "FLOAT",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "regen_rate",
+        "type": "FLOAT",
+        "mode": "REQUIRED"
+      }
+    ]
+  },
+  {
+    "name": "tags",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "key",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      },
+      {
+        "name": "value",
+        "type": "STRING",
+        "mode": "REQUIRED"
+      }
+    ]
+  }
+]

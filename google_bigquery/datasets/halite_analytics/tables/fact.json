@@ -1,0 +1,83 @@
+[
+  {
+    "name": "game_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "player_id",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "step",
+    "type": "INTEGER",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "ships",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Amount of currently active ships."
+  },
+  {
+    "name": "shipyards",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Amount of shipyards."
+  },
+  {
+    "name": "spawned",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Total amount of ships spawned."
+  },
+  {
+    "name": "cargo",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Amount of halite currently in cargo."
+  },
+  {
+    "name": "mined",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Total amount of halite mined."
+  },
+  {
+    "name": "burned",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Total amount of halite burned by moving."
+  },
+  {
+    "name": "dropped",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Total amount of halite dropped in collisions."
+  },
+  {
+    "name": "deposited",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Total amount of halite deposited in shipyards."
+  },
+  {
+    "name": "spent",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Total amount of halite spent on ships and shipyards."
+  },
+  {
+    "name": "banked",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Amount of halite currently banked."
+  },
+  {
+    "name": "available",
+    "type": "INTEGER",
+    "mode": "REQUIRED",
+    "description": "Amount of halite currently available on board."
+  }
+]
