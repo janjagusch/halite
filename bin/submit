@@ -1,0 +1,10 @@
+#! /bin/bash
+
+submit() {
+    kaggle competitions submit \
+        -f submission_standalone.py \
+        -m "${1}" \
+        halite
+}
+
+submit "$@"

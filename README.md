@@ -1,2 +1,3 @@
 # halite
-Our solution for the Halite challenge on Kaggle
+
+Our submission to the Halite competition on Kaggle.
