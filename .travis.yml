@@ -25,8 +25,13 @@ install:
 jobs:
   include:
     - stage: lint
+      name: "Black linting"
       script:
-        - make lint
+        - make lint_black
+    - stage: lint
+      name: "Pylint linting"
+      script:
+        - make lint_pylint
     - stage: test
       python:
         - "3.7"
