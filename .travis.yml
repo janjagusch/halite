@@ -41,13 +41,6 @@ jobs:
       script:
         - poetry run pytest --cov=halite --cov-report term-missing tests/
         - poetry run codecov
-    # - stage: release
-    #   before_script:
-    #     - bin/check_release "${TRAVIS_TAG}"
-    #     - poetry run python bin/validate_submission.py
-    #     - echo -n "${KAGGLE_API_TOKEN}" | base64 -d > kaggle.json
-    #   script:
-    #     - bin/submit "${TRAVIS_TAG}"
     - stage: release
       before_script:
         - bin/check_release "${TRAVIS_TAG}"
