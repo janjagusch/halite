@@ -67,8 +67,8 @@ jobs:
         - bin/check_release "${TRAVIS_TAG}"
         - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > "${GOOGLE_APPLICATION_CREDENTIALS}"
         # https://cloud.google.com/container-registry/docs/advanced-authentication#standalone-helper
-        - curl -fsSL "https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v${VERSION}/docker-credential-gcr_${OS}_${ARCH}-${VERSION}.tar.gz" | tar xz --to-stdout ./docker-credential-gcr > /usr/local/bin/docker-credential-gcr && chmod +x /usr/local/bin/docker-credential-gcr
-        - docker-credential-gcr configure-docker
+        - curl -fsSL "https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v${VERSION}/docker-credential-gcr_${OS}_${ARCH}-${VERSION}.tar.gz" | tar xz --to-stdout ./docker-credential-gcr > $HOME/docker-credential-gcr && chmod +x $HOME/docker-credential-gcr
+        - $HOME/docker-credential-gcr configure-docker
       script:
         - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
         - docker build -t "${IMAGE_TAG}" -f Dockerfile .
