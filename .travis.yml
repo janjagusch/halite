@@ -55,7 +55,7 @@ jobs:
         - poetry run pytest --cov=halite --cov-report term-missing tests/
         - poetry run codecov
     - stage: release
-      name: "Push to GCR"
+      name: "Pushing to GCR"
       services:
         - docker
       env:
