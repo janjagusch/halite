@@ -44,17 +44,6 @@ URL = "http://localhost:8080/act"
 OBS = env.state[0].observation
 CONFIG = env.configuration
 
-import json
-
-# +
-payload = {"observation": OBS, "configuration": CONFIG}
-
-with open("../test_container/payload.json", mode="w") as file_pointer:
-    json.dump(payload, file_pointer, sort_keys=True, indent=2)
-# -
-
-env.state[0].observation
-
 res = act(URL, OBS, CONFIG)
 
 res
