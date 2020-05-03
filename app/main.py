@@ -1,5 +1,5 @@
 """
-This module serves the submission through a FastAPI.
+This module serves the submission through FastAPI.
 """
 
 from fastapi import FastAPI
