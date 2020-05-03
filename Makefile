@@ -39,7 +39,7 @@ lint_pylint:
 	@poetry run pylint $$(find tests/ -iname "*.py")
 	@poetry run pylint $$(find bin/ -iname "*.py")
 
-lint: lint_black lint_pylint clean
+lint: lint_black lint_prettier lint_pylint clean
 
 
 standalone_submission:
