@@ -2,8 +2,15 @@ language: python
 python: "3.7"
 dist: xenial
 
+services:
+  - docker
+
 env:
   - KAGGLE_CONFIG_DIR="${TRAVIS_BUILD_DIR}"  
+  - GOOGLE_APPLICATION_CREDENTIALS="/gcs_key.json"
+  - GCR_HOSTNAME="eu.gcr.io"
+  - GCR_PROJECT_ID="kaggle-halite"
+  - GCR_IMAGE="halite-agent"
 
 stages:
   - lint
@@ -37,10 +44,19 @@ jobs:
       script:
         - poetry run pytest --cov=halite --cov-report term-missing tests/
         - poetry run codecov
+    # - stage: release
+    #   before_script:
+    #     - bin/check_release "${TRAVIS_TAG}"
+    #     - poetry run python bin/validate_submission.py
+    #     - echo -n "${KAGGLE_API_TOKEN}" | base64 -d > kaggle.json
+    #   script:
+    #     - bin/submit "${TRAVIS_TAG}"
     - stage: release
       before_script:
         - bin/check_release "${TRAVIS_TAG}"
-        - poetry run python bin/validate_submission.py
-        - echo "${KAGGLE_API_TOKEN}" | base64 -d > kaggle.json
+        # - poetry run python bin/validate_submission.py
+        - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > /gcs_key.json
       script:
-        - bin/submit "${TRAVIS_TAG}"
+        - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
+        - docker build -t "${IMAGE_TAG}" -f Dockerfile .
+        - bin/push_image_to_gcr "${IMAGE_TAG}"
