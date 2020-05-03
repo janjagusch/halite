@@ -33,8 +33,6 @@ jobs:
       language: node_js
       node_js:
         - 12
-      before_script:
-        - apk add --no-cache make
       script:
         - make lint_prettier
       before_install: skip
