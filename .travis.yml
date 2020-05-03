@@ -2,13 +2,6 @@ language: python
 python: "3.7"
 dist: xenial
 
-services:
-  - docker
-
-env:
-  - KAGGLE_CONFIG_DIR="${TRAVIS_BUILD_DIR}"  
-  - GOOGLE_APPLICATION_CREDENTIALS="/gcs_key.json"
-
 stages:
   - lint
   - test
@@ -42,9 +35,13 @@ jobs:
         - poetry run pytest --cov=halite --cov-report term-missing tests/
         - poetry run codecov
     - stage: release
+      name: "Push to GCR"
+      services:
+        - docker
+      env:
+        - GOOGLE_APPLICATION_CREDENTIALS="/gcs_key.json"
       before_script:
         - bin/check_release "${TRAVIS_TAG}"
-        # - poetry run python bin/validate_submission.py
         - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > /gcs_key.json
       script:
         - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
