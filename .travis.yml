@@ -3,6 +3,7 @@ python: "3.7"
 dist: xenial
 
 stages:
+  - check
   - lint
   - test
   - name: release
@@ -24,6 +25,10 @@ install:
 
 jobs:
   include:
+    - stage: check
+      name: "Version checking"
+      script:
+        - bin/check_version
     - stage: lint
       name: "Black linting"
       script:
