@@ -37,6 +37,8 @@ jobs:
         - apk add --no-cache make
       script:
         - make lint_prettier
+      before_install: skip
+      install: skip
     - stage: lint
       name: "Pylint linting"
       script:
