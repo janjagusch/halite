@@ -8,9 +8,6 @@ services:
 env:
   - KAGGLE_CONFIG_DIR="${TRAVIS_BUILD_DIR}"  
   - GOOGLE_APPLICATION_CREDENTIALS="/gcs_key.json"
-  - GCR_HOSTNAME="eu.gcr.io"
-  - GCR_PROJECT_ID="kaggle-halite"
-  - GCR_IMAGE="halite-agent"
 
 stages:
   - lint
