@@ -59,10 +59,10 @@ jobs:
       services:
         - docker
       env:
-        - GOOGLE_APPLICATION_CREDENTIALS="/gcs_key.json"
+        - GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcs_key.json"
       before_script:
         - bin/check_release "${TRAVIS_TAG}"
-        - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > /gcs_key.json
+        - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > "${GOOGLE_APPLICATION_CREDENTIALS}"
       script:
         - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
         - docker build -t "${IMAGE_TAG}" -f Dockerfile .
