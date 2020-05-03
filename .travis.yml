@@ -2,17 +2,15 @@ language: python
 python: "3.7"
 dist: xenial
 
-env:
-  - KAGGLE_CONFIG_DIR="${TRAVIS_BUILD_DIR}"  
-
 stages:
+  - check
   - lint
   - test
   - name: release
     if: tag IS present
 
 cache:
-  paths:
+  directories:
     - .venv
 
 before_install:
@@ -27,10 +25,29 @@ install:
 
 jobs:
   include:
-    - stage: lint
+    - stage: check
+      name: "Version checking"
       script:
-        - make lint
+        - bin/check_version
+    - stage: lint
+      name: "Black linting"
+      script:
+        - make lint_black
+    - stage: lint
+      name: "Prettier linting"
+      language: node_js
+      node_js:
+        - 12
+      script:
+        - make lint_prettier
+      before_install: skip
+      install: skip
+    - stage: lint
+      name: "Pylint linting"
+      script:
+        - make lint_pylint
     - stage: test
+      name: "Pytest testing"
       python:
         - "3.7"
         - "3.8"
@@ -38,9 +55,21 @@ jobs:
         - poetry run pytest --cov=halite --cov-report term-missing tests/
         - poetry run codecov
     - stage: release
+      name: "Pushing to GCR"
+      services:
+        - docker
+      env:
+        - GOOGLE_APPLICATION_CREDENTIALS="${HOME}/gcs_key.json"
+        - VERSION=2.0.1
+        - OS=linux
+        - ARCH=amd64
       before_script:
         - bin/check_release "${TRAVIS_TAG}"
-        - poetry run python bin/validate_submission.py
-        - echo "${KAGGLE_API_TOKEN}" | base64 -d > kaggle.json
+        - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > "${GOOGLE_APPLICATION_CREDENTIALS}"
+        # https://cloud.google.com/container-registry/docs/advanced-authentication#standalone-helper
+        - curl -fsSL "https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v${VERSION}/docker-credential-gcr_${OS}_${ARCH}-${VERSION}.tar.gz" | tar xz --to-stdout ./docker-credential-gcr > $HOME/docker-credential-gcr && chmod +x $HOME/docker-credential-gcr
+        - $HOME/docker-credential-gcr configure-docker
       script:
-        - bin/submit "${TRAVIS_TAG}"
+        - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
+        - docker build -t "${IMAGE_TAG}" -f Dockerfile .
+        - bin/push_image_to_gcr "${IMAGE_TAG}"

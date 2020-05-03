@@ -15,24 +15,32 @@ test_tox: test_missing_init
 
 test: test_tox clean
 
-format_black: test_missing_init
+format_black:
 	@echo "Black formatting ..."
 	@poetry run black .
 
-format: format_black clean
+format_prettier:
+	@echo "Prettier formatting ..."
+	@npx prettier --write $$(find \( -name "*.yml" -o -name "*.yaml" -o -name "*.json" \) -not \( -path "./.venv/*" -o -path "./.tox/*" \))
 
-lint_black: test_missing_init
+format: format_black format_prettier clean
+
+lint_black:
 	@echo "Black linting ..."
-	@poetry run black --check halite/
+	@poetry run black --check .
 
-lint_pylint: test_missing_init
+lint_prettier:
+	@echo "Prettier linting ..."
+	@npx prettier --check $$(find \( -name "*.yml" -o -name "*.yaml" -o -name "*.json" \) -not \( -path "./.venv/*" -o -path "./.tox/*" \))
+
+lint_pylint:
 	@echo "Pylint linting ..."
-	@poetry run pylint halite
+	@poetry run pylint halite/
 	@poetry run pylint $$(find tests/ -iname "*.py")
 	@poetry run pylint $$(find bin/ -iname "*.py")
-	@poetry run pylint submission.py
 
-lint: lint_black lint_pylint clean
+lint: lint_black lint_prettier lint_pylint clean
+
 
 standalone_submission:
 	@echo "Building submission_standalone.py ..."
