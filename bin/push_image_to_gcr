@@ -1,0 +1,20 @@
+#! /bin/bash
+
+main() {
+    SOURCE_IMAGE="${1}"
+    IMAGE_NAME="${2:-${SOURCE_IMAGE}}"
+    PROJECT_ID="${3:-kaggle-halite}"
+    HOSTNAME="${4:-eu.gcr.io}"
+
+    echo "Source image: ${SOURCE_IMAGE}"
+    echo "Hostname: ${HOSTNAME}"
+    echo "Project ID: ${PROJECT_ID}"
+    echo "Image name: ${IMAGE_NAME}"
+
+    IMAGE_URL="${HOSTNAME}/${PROJECT_ID}/${IMAGE_NAME}"
+
+    docker tag "${SOURCE_IMAGE}" "${IMAGE_URL}"
+    docker push "${IMAGE_URL}"
+}
+
+main "$@"
