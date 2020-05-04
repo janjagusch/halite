@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "halite"
+name = "halite-agent"
 version = "0.1.0"
 description = "Our submission to the Halite competition on Kaggle."
 authors = [
