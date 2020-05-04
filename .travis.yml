@@ -29,6 +29,7 @@ jobs:
       name: "Version checking"
       script:
         - bin/check_version
+      install: skip
     - stage: lint
       name: "Black linting"
       script:
@@ -71,6 +72,7 @@ jobs:
         - sudo chown -R "$(whoami)" "$HOME/.config/gcloud"
         - source ./google-cloud-sdk/path.bash.inc
         - gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+        # https://cloud.google.com/container-registry/docs/advanced-authentication#gcloud-helper
         - gcloud auth configure-docker --quiet
       script:
         - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
