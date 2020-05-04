@@ -12,7 +12,6 @@ stages:
 cache:
   directories:
     - .venv
-  pip
 
 before_install:
   - bin/check_version
