@@ -71,7 +71,7 @@ jobs:
         - sudo chown -R "$(whoami)" "$HOME/.config/gcloud"
         - source ./google-cloud-sdk/path.bash.inc
         - gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
-        - gcloud auth configure-docker
+        - gcloud auth configure-docker --quiet
       script:
         - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
         - docker build -t "${IMAGE_TAG}" -f Dockerfile .
