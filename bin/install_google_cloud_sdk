@@ -14,7 +14,7 @@ tar xz --file="./google-cloud-sdk.tar.gz"
 
 ./google-cloud-sdk/install.sh --quiet
 
-sudo chown -R "$whoami" "$HOME/.config/gcloud"
+sudo chown -R "$(whoami)" "$HOME/.config/gcloud"
 
 rm -rf "./google-cloud-sdk"
 rm "./google-cloud-sdk.tar.gz"
