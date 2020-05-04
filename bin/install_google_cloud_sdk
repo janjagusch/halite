@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Installs the Google Cloud SDK.
+
+set -e
+
+echo "Downloading Google Cloud SDK..."
+curl \
+    "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-290.0.1-linux-x86_64.tar.gz" \
+    --silent \
+    --output "./google-cloud-sdk.tar.gz"
+
+tar xz --file="./google-cloud-sdk.tar.gz"
+
+./google-cloud-sdk/install.sh --quiet
+
+sudo chown -R "$whoami" "$HOME/.config/gcloud"
+
+rm -rf "./google-cloud-sdk"
+rm "./google-cloud-sdk.tar.gz"
