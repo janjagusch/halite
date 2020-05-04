@@ -12,6 +12,7 @@ stages:
 cache:
   directories:
     - .venv
+  pip
 
 before_install:
   - bin/check_version
@@ -68,8 +69,11 @@ jobs:
         - echo -n "${GOOGLE_APPLICATION_CREDENTIALS_FILE}" | base64 -d > "${GOOGLE_APPLICATION_CREDENTIALS}"
         # https://cloud.google.com/sdk/docs/downloads-versioned-archives
         - sudo bin/install_google_cloud_sdk
+        - sudo chown -R "$(whoami)" "$HOME/.config/gcloud"
+        - source ./google-cloud-sdk/path.bash.inc
         - gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
       script:
         - IMAGE_TAG="${TRAVIS_REPO_SLUG}:${TRAVIS_TAG}"
         - docker build -t "${IMAGE_TAG}" -f Dockerfile .
         - bin/push_image_to_gcr "${IMAGE_TAG}"
+      install: skip
