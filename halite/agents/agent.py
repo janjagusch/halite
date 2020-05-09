@@ -30,8 +30,8 @@ class Agent:
         self.game_log = game_log
         self.config = config
 
-    def __call__(self, observation):
+    def __call__(self, observation, config=None):
         return self.act(observation)
 
-    def act(self, observation):
+    def act(self, observation, config=None):
         raise NotImplementedError

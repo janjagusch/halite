@@ -6,5 +6,5 @@ class DepressedAgent(Agent):
     Bot that doesn't feel like doing anything
     """
 
-    def act(self, observation):
+    def act(self, observation, config=None):
         return []

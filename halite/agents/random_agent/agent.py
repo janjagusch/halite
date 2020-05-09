@@ -20,10 +20,12 @@ class RandomAgent(Agent):
         self.game_log = game_log
         self.config = config
 
-    def act(self, obs):
-        size = self.config.size
+    def act(self, obs, config=None):
+        if config is None:
+            config = self.config
+        size = config.size
         halite = obs.halite
-        board = Board(obs, self.config)
+        board = Board(obs, config)
         player_halite, shipyards, ships = obs.players[obs.player]  
 
         # Move, Convert, or have ships collect halite.
@@ -35,7 +37,7 @@ class RandomAgent(Agent):
             if board.shipyards[pos] == -1 and halite[pos] > ship_halite and randint(0,1) == 1:
                 continue
             # Convert to Shipyard (50% probability when no shipyards, 5% otherwise).
-            if board.shipyards[pos] == -1 and player_halite > self.config.convertCost and randint(0, 20 if len(shipyards) else 1) == 1:
+            if board.shipyards[pos] == -1 and player_halite > config.convertCost and randint(0, 20 if len(shipyards) else 1) == 1:
                 board.convert(uid)
                 continue
             # Move Ship (random between all available directions).
@@ -62,7 +64,7 @@ class RandomAgent(Agent):
                 
         # Spawn ships (30% probability when possible, or 100% if no ships).
         for uid, pos in shipyards.items():
-            if board.ships[pos] is None and player_halite >= self.config.spawnCost and (randint(0,2) == 2 or len(ships_items) == 0):
+            if board.ships[pos] is None and player_halite >= config.spawnCost and (randint(0,2) == 2 or len(ships_items) == 0):
                 board.spawn(uid)
         
         return board.action
