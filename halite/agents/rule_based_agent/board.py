@@ -1,21 +1,5 @@
-"""
-This is a modified version of the default data model supplied by Kaggle/Halite. I'm porting the old bot over
-to this because this also outputs the actions.
-
-=== Modifications ===
-+ Refactored 
-    + get_col_row() and get_to_pos()  methods are now static methods
-    + 
-+ Added Direction and Action classes to avoid using strings like "NORTH", "SPAWN", "CONVERT" directly
-
-
-
-"""
-
 from halite.dtypes import Position, Action, Direction
 from dataclasses import dataclass
-
-
 
 
 class Board:
@@ -30,6 +14,7 @@ class Board:
         self.action = {}
         self.players = {} 
         self.config = config
+        ## TODO populate for when the BoardCell class is finished
         # self.cells = [BoardCell() for i in range(size) for j in range(size)]
         size = config.size
 
@@ -54,36 +39,10 @@ class Board:
             self.players[pid] = player
 
         self.me = self.players[mypid]
-
-
-        # for uid, pos in shipyards.items():
-        #     self.shipyards[pos] = pid
-        #     self.shipyards_by_uid[uid] = {"player_index": pid, "uid": uid, "pos": pos}
-        
-        # for uid, ship in ships.items():
-        #     pos, ship_halite = ship
-        #     details = {"halite": ship_halite, "player_index": pid, "uid": uid, "pos": pos}
-        #     self.ships[pos] = details
-        #     self.ships_by_uid[uid] = details
-            ## TODO Move to a navigator module instead
-            # for direction in [Direction.north, Direction.south, Direction.east, Direction.west]:
-            #     self.possible_ships[Board.get_to_pos(size, pos, direction)][uid] = details
     
     @staticmethod
     def get_col_row(size, pos):
         return (pos % size, pos // size)
-
-    # @staticmethod
-    # def get_to_pos(size, pos, direction):
-    #     col, row = Board.get_col_row(size, pos)
-    #     if direction == Direction.north:
-    #         return pos - size if pos >= size else size ** 2 - size + col
-    #     elif direction == Direction.south:
-    #         return col if pos + size >= size ** 2 else pos + size
-    #     elif direction == Direction.east:
-    #         return pos + 1 if col < size - 1 else row * size
-    #     elif direction == Direction.west:
-    #         return pos - 1 if col > 0 else (row + 1) * size - 1
 
     def ship_move(self, ship_uid, direction):
         self.action[ship_uid] = direction
@@ -93,13 +52,6 @@ class Board:
 
     def shipyard_spawn(self, shipyard_uid):
         self.action[shipyard_uid] = Action.spawn
-
-    ## TODO Move to a navigator module instead
-    # def __remove_possibles(self, ship_uid):
-    #     pos = self.ships_by_uid[ship_uid]["pos"]
-    #     for d in [Direction.north, Direction.south, Direction.east, Direction.west]:
-    #         to_pos = Board.get_to_pos(self.config.size, pos, d)
-    #         del self.possible_ships[to_pos][ship_uid]
 
 
 @dataclass
@@ -150,8 +102,10 @@ class Shipyard:
         return f"Shipyard({self.uid})"
 
 
+# TODO: Complete this class
 @dataclass
 class BoardCell:
     board: Board
     pos: Position
+    halite: float
     units: dict = {}

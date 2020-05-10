@@ -1,1 +1,1 @@
-# from .bot import RuleBasedBot
+from .agent import RuleBasedBot as Agent

@@ -1,11 +1,4 @@
-# import logging
-import numpy as np
 from halite.dtypes import Direction
-# import timeit
-# from hlt.positionals import Direction
-# import hlt.constants as constants
-# from bots.rule_based_bot.search import a_star_search, reconstruct_path, add_path_to_occupied, get_neighbours, make_mining_dict
-# from utils import is_movable, get_enemy_ship_dict, transform_enemy_ship_dict
 
 
 class Navigator:
@@ -46,25 +39,14 @@ class DumbNavigator(Navigator):
                 return None
 
 
+"""
+==============
+Old AStar code
+==============
 
-# def _get_direction(game_map, start_pos, next_pos):
-#     directions =[Direction.North, Direction.South, Direction.East, Direction.West, Direction.Still]
-#     for current_direction in directions:
-#         if game_map.normalize(start_pos.directional_offset(current_direction)) == next_pos:
-#             return current_direction
-#     return Direction.Still
+Keeping this around for when the AStarSearch module is revived
 
-
-# class ShipNavigator:
-
-#     def navigate(self, game, game_log, player):
-#         pass
-
-#     def make_commands(self, game, game_log, player=None):
-#         if player is None:
-#             player = game.me
-#         return self.navigate(game=game, game_log=game_log, player=player)
-
+"""
 
 # class AStarNavigator(ShipNavigator):
 
