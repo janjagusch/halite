@@ -34,4 +34,8 @@ class Agent:
         return self.act(observation)
 
     def act(self, observation, config=None):
+        """
+        >>> obs.keys()
+        dict_keys(['player', 'step', 'halite', 'players'])
+        """
         raise NotImplementedError
