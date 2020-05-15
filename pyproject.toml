@@ -10,7 +10,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-kaggle-environments = "^0.3.1"
+kaggle-environments = "^0.3.2"
 requests = "^2.23.0"
 fastapi = "^0.54.1"
 
