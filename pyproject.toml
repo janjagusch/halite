@@ -16,7 +16,7 @@ fastapi = "^0.54.1"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
-codecov = "^2.0.22"
+codecov = "^2.1.0"
 ipykernel = "^5.2.0"
 kaggle = "^1.5.6"
 pylint = "^2.5.2"
