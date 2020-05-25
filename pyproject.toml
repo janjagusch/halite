@@ -12,7 +12,7 @@ license = "MIT"
 python = "^3.7"
 kaggle-environments = "^0.3.2"
 requests = "^2.23.0"
-fastapi = "^0.54.1"
+fastapi = "^0.55.1"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
