@@ -387,7 +387,7 @@ description = "Kaggle Environments"
 name = "kaggle-environments"
 optional = false
 python-versions = ">=3.6"
-version = "1.0.3"
+version = "1.0.13"
 
 [package.dependencies]
 jsonschema = ">=3.0.1"
@@ -886,7 +886,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "a97c7262d6ef07e9b144b219df3b294c12285cffb2cd172c64d578b1300ffefd"
+content-hash = "2852d3357f72efbaf45987c65c994c701576a482e2c05c243bd0a7999a72c645"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1049,8 +1049,8 @@ kaggle = [
     {file = "kaggle-1.5.6.tar.gz", hash = "sha256:3c2c097dca964b9a891bf3407a3164be19e40857c7c5cc2c5fef323adfccb838"},
 ]
 kaggle-environments = [
-    {file = "kaggle-environments-1.0.3.tar.gz", hash = "sha256:f73fe58578487d481a6355f91d4129d122bc379f74b86663b0c722dd37130fe6"},
-    {file = "kaggle_environments-1.0.3-py2.py3-none-any.whl", hash = "sha256:8777a73cbb05eda32b9aaef1156446964ad1ae24aa70a22b9e753c71a54e44e0"},
+    {file = "kaggle-environments-1.0.13.tar.gz", hash = "sha256:44439c1a3643932d2ad113c38a2935a3b268e5221ca673ea03de366abf5179b4"},
+    {file = "kaggle_environments-1.0.13-py2.py3-none-any.whl", hash = "sha256:623d72f5ad978fd1b0b85922f2382fdfec7e2c4089767eedc2c542b906733f92"},
 ]
 lazy-object-proxy = [
     {file = "lazy-object-proxy-1.4.3.tar.gz", hash = "sha256:f3900e8a5de27447acbf900b4750b0ddfd7ec1ea7fbaf11dfa911141bc522af0"},
