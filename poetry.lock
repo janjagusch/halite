@@ -231,7 +231,7 @@ description = "IPython Kernel for Jupyter"
 name = "ipykernel"
 optional = false
 python-versions = ">=3.5"
-version = "5.3.3"
+version = "5.3.4"
 
 [package.dependencies]
 appnope = "*"
@@ -886,7 +886,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "a97c7262d6ef07e9b144b219df3b294c12285cffb2cd172c64d578b1300ffefd"
+content-hash = "da9fe4b31adba4143b2c1f1b3af93eb0daed20804f7f4a95f325c5b9bada8a81"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1014,8 +1014,8 @@ importlib-metadata = [
     {file = "importlib_metadata-1.6.0.tar.gz", hash = "sha256:34513a8a0c4962bc66d35b359558fd8a5e10cd472d37aec5f66858addef32c1e"},
 ]
 ipykernel = [
-    {file = "ipykernel-5.3.3-py3-none-any.whl", hash = "sha256:d718d5f717e0818329d371313f99aabba1bf4ca13f1e9f80cc3c5f866ee8a9ad"},
-    {file = "ipykernel-5.3.3.tar.gz", hash = "sha256:09bac6473a593f61a3ae036035b81a2d30457ff157163562796560516a2f67d8"},
+    {file = "ipykernel-5.3.4-py3-none-any.whl", hash = "sha256:d6fbba26dba3cebd411382bc484f7bc2caa98427ae0ddb4ab37fe8bfeb5c7dd3"},
+    {file = "ipykernel-5.3.4.tar.gz", hash = "sha256:9b2652af1607986a1b231c62302d070bc0534f564c393a5d9d130db9abbbe89d"},
 ]
 ipython = [
     {file = "ipython-7.14.0-py3-none-any.whl", hash = "sha256:5b241b84bbf0eb085d43ae9d46adf38a13b45929ca7774a740990c2c242534bb"},
