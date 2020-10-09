@@ -23,7 +23,7 @@ pylint = "^2.5.2"
 pytest = "^5.4.2"
 pytest-cov = "^2.8.1"
 stickytape = "^0.1.14"
-tox = "^3.14.5"
+tox = "^3.20.1"
 uvicorn = "^0.11.5"
 
 [build-system]
